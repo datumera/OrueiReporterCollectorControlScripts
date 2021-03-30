@@ -1,0 +1,60 @@
+#!/bin/sh
+#
+# reporter           This shell script takes care of starting and stopping
+#                    the ORUEI reporter services.
+#
+# chkconfig: - 99 01
+# description: ORUEI reporter service start/stop scripts
+
+### BEGIN INIT INFO
+# Provides: reporter
+# Required-Start: $local_fs $network $syslog $rpcbind $nfs
+# Required-Stop: $local_fs $network $syslog $rpcbind $nfs
+# Default-Stop: 0 1 6
+# Short-Description: ORUEI reporter service start/stop scripts
+### END INIT INFO
+
+NOW=$(date +"%Y%m%d")
+LOG=/tmp/reporter_start
+prog=reporter
+lockfile=/var/lock/subsys/$prog
+srcdir=/opt/ruei/scripts
+start_reporter="${srcdir}/reporter.sh start"
+stop_reporter="${srcdir}/reporter.sh stop"
+
+
+touch $lockfile
+
+# Source config
+
+start() {
+                su - moniforce -c "LAUNCH_FROM_SRV=1 $start_reporter 2> $LOG.err.$NOW 1> $LOG.out.$NOW &"
+                echo "Starting Reporter: background mode, check logfiles on: /tmp/ as reporter_start.err and reporter_start.out"
+}
+
+stop() {
+        su - moniforce -c "LAUNCH_FROM_SRV=1 $stop_reporter"
+        rm -f $lockfile
+}
+restart() {
+        stop
+        start
+}
+
+case "$1" in
+  start)
+        start
+        ;;
+  stop)
+        stop
+        ;;
+  restart)
+        restart
+        ;;
+  *)
+        echo $"Usage: $0 {start|stop|restart}"
+        exit 3
+esac
+
+exit $?
+

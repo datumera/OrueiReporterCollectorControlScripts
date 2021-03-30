@@ -1,0 +1,60 @@
+#!/bin/sh
+#
+# collector           This shell script takes care of starting and stopping
+#                    the ORUEI collector services.
+#
+# chkconfig: - 99 01
+# description: ORUEI collector service start/stop scripts
+
+### BEGIN INIT INFO
+# Provides: collector
+# Required-Start: $local_fs $network $syslog $rpcbind $nfs
+# Required-Stop: $local_fs $network $syslog $rpcbind $nfs
+# Default-Stop: 0 1 6
+# Short-Description: ORUEI collector service start/stop scripts
+### END INIT INFO
+
+NOW=$(date +"%Y%m%d")
+LOG=/tmp/collector_start
+prog=collector
+lockfile=/var/lock/subsys/$prog
+srcdir=/opt/ruei/scripts
+start_collector="${srcdir}/collector.sh start"
+stop_collector="${srcdir}/collector.sh stop"
+
+
+touch $lockfile
+
+# Source config
+
+start() {
+                su - moniforce -c "LAUNCH_FROM_SRV=1 $start_collector 2> $LOG.err.$NOW 1> $LOG.out.$NOW &"
+                echo "Starting Reporter: background mode, check logfiles on: /tmp/ as collector_start.err and collector_start.out"
+}
+
+stop() {
+        su - moniforce -c "LAUNCH_FROM_SRV=1 $stop_collector"
+        rm -f $lockfile
+}
+restart() {
+        stop
+        start
+}
+
+case "$1" in
+  start)
+        start
+        ;;
+  stop)
+        stop
+        ;;
+  restart)
+        restart
+        ;;
+  *)
+        echo $"Usage: $0 {start|stop|restart}"
+        exit 3
+esac
+
+exit $?
+
